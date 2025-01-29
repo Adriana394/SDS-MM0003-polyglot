@@ -1,0 +1,6 @@
+# environment files
+.venv/
+.env
+
+# solutions to be released at the end of the project
+solutions/

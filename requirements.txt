@@ -1,0 +1,8 @@
+# huggingface dependancies
+transformers
+torch
+
+# load environment variables
+python-dotenv
+
+# Please add any additional libraries you need here
