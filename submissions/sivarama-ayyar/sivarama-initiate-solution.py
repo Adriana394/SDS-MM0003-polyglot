@@ -30,4 +30,3 @@ while prompt != "bye":
             print(chunk.choices[0].delta.content, end="")
     print("\n")
     prompt = input("You: ")
-    #history = history + chunk.choices[0].delta.content
