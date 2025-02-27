@@ -1,0 +1,13 @@
+# huggingface dependancies
+transformers
+torch
+
+# load environment variables
+python-dotenv
+
+# additional libraries
+accelerate
+bitsandbytes
+gradio
+gTTS
+pydub
