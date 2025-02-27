@@ -2,8 +2,8 @@
 transformers
 torch
 openai
-google-generativeai
 gradio
+pyttsx3
 # load environment variables
 python-dotenv
 
