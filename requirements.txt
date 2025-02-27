@@ -1,7 +1,9 @@
 # huggingface dependancies
 transformers
 torch
-
+openai
+gradio
+pyttsx3
 # load environment variables
 python-dotenv
 
