@@ -5,4 +5,12 @@ torch
 # load environment variables
 python-dotenv
 
+# UI
+gradio # or (please comment out the one you don't want to use)
+# streamlit
+
+# Gen AI models
+openai
+kokoro # google text to speech
+
 # Please add any additional libraries you need here
