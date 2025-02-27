@@ -1,13 +1,6 @@
 from huggingface_hub import InferenceClient
 from dotenv import load_dotenv
 import os
-import gradio as gr
-from openai import OpenAI
-from pathlib import Path
-import logging
-
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 load_dotenv()
 
@@ -16,7 +9,6 @@ if not HUGGINGFACE_API_KEY:
     raise ValueError("HUGGINGFACE_API_KEY not found.")
 
 client = InferenceClient(api_key=HUGGINGFACE_API_KEY)
-openai_client = OpenAI()
 
 system_message = """
 You are a helpful AI assistant whose job is to help the user learn a new language.
@@ -29,6 +21,14 @@ You will begin by asking the user the following:
 
 Using all the information above which the user will provide, you are to help guide them in learning the basics of their preferred language.
 
+Please handle these specific types of queries:
+- How do you say [word/phrase] in [target language]?
+- Teach me a simple sentence in [target language].
+- What's the translation of [word/phrase] in [target language]?
+- Help me understand basic greetings in [target language].
+
+When providing translations, make sure to explain pronunciation tips when relevant.
+
 Here is an example conversation:
 Assistant: Welcome to your personal learning companion. Which language would you like to learn?
 User: French
@@ -37,66 +37,57 @@ Assistant: Great, let's get started with French. Let me teach you about some bas
 And then you will proceed to tell the user about some basic words and phrases they can use.
 """
 
+# Initialize conversation history
 messages = [{"role": "system", "content": system_message}]
 
-def chat(messages):
-    logging.info("Sending messages to the chat model.")
+def chat(user_input):
+    """
+    Process user message and return AI response.
+    Args:
+        user_input: String containing the user's message
+    Returns:
+        String containing the AI's response
+    """
+    global messages
+    
+    # Add user message to conversation history
+    messages.append({"role": "user", "content": user_input})
+    
+    # Get response from model
     completion = client.chat.completions.create(
         model="mistralai/Mistral-7B-Instruct-v0.3",
         messages=messages,
         max_tokens=500
     )
     response = completion.choices[0].message['content']
-    logging.info("Received response from the chat model.")
+    
+    # Add AI response to conversation history
+    messages.append({"role": "assistant", "content": response})
+    
     return response
 
-def generate_audio(text, lang):
-    logging.info("Generating audio for the text.")
-    speech_file_path = Path(__file__).parent / "speech.mp3"
-    response = openai_client.audio.speech.create(
-        model="tts-1",
-        voice="alloy",
-        input=text,
-    )
-    response.stream_to_file(speech_file_path)
-    logging.info("Audio file saved.")
-    return str(speech_file_path)
-
-def respond(selected_prompt, language):
-    logging.info("User input received: %s", selected_prompt)
-    messages.append({"role": "user", "content": selected_prompt})
-    response = chat(messages)
-    messages.append({"role": "assistant", "content": response})
-    audio_file = generate_audio(response, language)
-    logging.info("Response generated and audio file created.")
-    return response, audio_file
-
-def gradio_interface():
-    prompt_templates = [
-        "Teach me how to greet someone formally.",
-        "How do I say 'Thank you'?",
-        "What is the translation of 'Good morning'?",
-        "Teach me some basic phrases"
-    ]
-
-    with gr.Blocks(css=".btn-primary {background-color: green;}") as demo:
-        gr.Markdown("## Language Learning Assistant")
+def main():
+    """
+    Main function to run the language learning assistant in the terminal.
+    """
+    print("🌐 Welcome to the AI Language Companion!")
+    print("Type 'quit', 'exit', or 'bye' to end the conversation.\n")
+    
+    # Initial greeting
+    print("AI: Welcome to your personal learning companion. Which language would you like to learn?\n")
+    
+    # Main conversation loop
+    while True:
+        user_input = input("You: ")
         
-        with gr.Row():
-            with gr.Column(scale=1):
-                language = gr.Dropdown(choices=["French", "Spanish", "Dutch"], label="What language would you like to learn?")
-                selected_prompt = gr.Dropdown(choices=prompt_templates, label="What would you like to learn?")
-            with gr.Column(scale=1):
-                text_output = gr.Textbox(label="AI Response")
-                audio_output = gr.Audio(label="AI Response (Audio)")
+        # Check if user wants to exit
+        if user_input.lower() in ['quit', 'exit', 'bye']:
+            print("AI: Thank you for learning with me today! Goodbye!")
+            break
         
-        submit_button = gr.Button("Submit", variant="primary")
-        
-        submit_button.click(respond, inputs=[selected_prompt, language], outputs=[text_output, audio_output])
-
-    logging.info("Launching Gradio interface.")
-    demo.launch()
+        # Get and display AI response
+        ai_response = chat(user_input)
+        print(f"AI: {ai_response}\n")
 
 if __name__ == "__main__":
-    logging.info("Starting the application.")
-    gradio_interface()
+    main()

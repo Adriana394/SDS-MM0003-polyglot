@@ -62,9 +62,26 @@ def generate_audio(text, lang):
     logging.info("Audio file saved.")
     return str(speech_file_path)
 
-def respond(selected_prompt, language):
+def transcribe_audio(audio_file):
+    logging.info("Transcribing audio file.")
+    audio_path = Path(audio_file)
+    response = openai_client.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_path
+    )
+    transcription = response.text
+    logging.info("Transcription completed.")
+    return transcription
+
+def respond(selected_prompt, language, audio_input=None):
     logging.info("User input received: %s", selected_prompt)
-    messages.append({"role": "user", "content": selected_prompt})
+    if audio_input:
+        user_input = transcribe_audio(audio_input)
+        logging.info("Transcribed audio input: %s", user_input)
+    else:
+        user_input = selected_prompt
+    
+    messages.append({"role": "user", "content": user_input})
     response = chat(messages)
     messages.append({"role": "assistant", "content": response})
     audio_file = generate_audio(response, language)
@@ -86,13 +103,14 @@ def gradio_interface():
             with gr.Column(scale=1):
                 language = gr.Dropdown(choices=["French", "Spanish", "Dutch"], label="What language would you like to learn?")
                 selected_prompt = gr.Dropdown(choices=prompt_templates, label="What would you like to learn?")
+                audio_input = gr.Audio(sources=["upload","microphone"], type="filepath", label="Or speak your query")
             with gr.Column(scale=1):
                 text_output = gr.Textbox(label="AI Response")
                 audio_output = gr.Audio(label="AI Response (Audio)")
         
         submit_button = gr.Button("Submit", variant="primary")
         
-        submit_button.click(respond, inputs=[selected_prompt, language], outputs=[text_output, audio_output])
+        submit_button.click(respond, inputs=[selected_prompt, language, audio_input], outputs=[text_output, audio_output])
 
     logging.info("Launching Gradio interface.")
     demo.launch()
