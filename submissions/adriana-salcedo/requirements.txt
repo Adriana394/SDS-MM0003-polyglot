@@ -1,0 +1,12 @@
+# Huggingface dependancies
+transformers
+torch
+
+# Load environment variables
+python-dotenv
+
+# Please add any additional libraries you need here
+numpy 
+pandas 
+gradio
+openai
